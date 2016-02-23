@@ -1,0 +1,347 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SignalR MMO</title>
+    <style type="text/css">
+        body {
+            background: url(img/bg.png) repeat;
+        }
+
+        #character {
+            width: 32px;
+            height: 32px;
+            position: absolute;
+            background: url("img/male.png");
+            left: 25px;
+            top: 25px;
+        }
+
+        .speech-bubble {
+            background-color: #f8f8f8;
+            border: 1px solid #c8c8c8;
+            border-radius: 5px;
+            width: 110px;
+            text-align: center;
+            padding: 20px;
+            position: absolute;
+            left: 40px;
+            bottom: 30px;
+        }
+
+        .speech-bubble .arrow {
+            border-style: solid;
+            position: absolute;
+        }
+
+        .bottom {
+            border-color: #c8c8c8 transparent transparent transparent;
+            border-width: 8px 8px 0px 8px;
+            bottom: -8px;
+        }
+
+        .bottom:after {
+            border-color: #f8f8f8 transparent transparent transparent;
+            border-style: solid;
+            border-width: 7px 7px 0px 7px;
+            bottom: 1px;
+            content: "";
+            position: absolute;
+            left: -7px;
+        }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <script src="Scripts/jquery.signalR-2.1.2.min.js"></script>
+    <script src="signalr/hubs"></script>
+
+    <script type="text/javascript">
+        var players = new Array();
+
+        // Declare a proxy to reference the hub.
+        var game = $.connection.gameHub;
+        // Create a function that the hub can call to broadcast messages.
+        game.client.addPlayer = function (name, x, y) {
+            addPlayer(name, x, y);
+        };
+        game.client.movePlayer = function (name, direction) {
+            movePlayer(name, direction);
+        };
+        game.client.sayToAll = function (name, message) {
+            sayToAll(name, message);
+        };
+
+        // Start the connection.
+        $.connection.hub.start().done(function () {
+            // Get name from user
+            $('#name').val(prompt('Enter your name:', ''));
+            game.server.getOtherPlayers();
+            game.server.addPlayer($("#name").val());
+
+            $('#sendmessage').click(function () {
+                // Print on calling player
+                $("#character").append("<div class='speech-bubble'><div class='arrow bottom right'></div>" + $("#message").val() + "</div>");
+
+                game.server.sayToAll($('#name').val(), $('#message').val());
+                // Clear text box and reset focus for next comment. 
+                $('#message').val('').focus();
+            });
+        });
+
+        function addPlayer(name, x, y) {
+            var newPlayer = new Object();
+
+            newPlayer.name = name;
+            newPlayer.x = x;
+            newPlayer.y = y;
+            newPlayer.left = 0;
+            newPlayer.up = 0;
+            newPlayer.right = 0;
+            newPlayer.bottom = 0;
+
+            players.push(newPlayer);
+
+            $("body").prepend("<div id=character-" + name + "></div>");
+            $("#character-" + name).css({
+                "width": "32px",
+                "height": "32px",
+                "position": "absolute",
+                "background": "url('img/male.png')",
+                "left": x + "px",
+                "top": y + "px",
+            }
+            );
+        }
+
+        function movePlayer(name, direction) {
+            var player;
+
+            for (var i = 0; i < players.length; i++) {
+                if (players[i].name == name) {
+                    player = players[i];
+                }
+            }
+
+            switch (direction) {
+                case "left":
+                    player.left++;
+
+                    if (player.left == 1) {
+                        $("#character-" + name).finish().animate({
+                            left: "-=50"
+                        });
+                        $("#character-" + name).css("background-position", "0px -32px");
+                    } else if (player.left == 2) {
+                        $("#character-" + name).finish().animate({
+                            left: "-=50"
+                        });
+                        $("#character-" + name).css("background-position", "-64px -32px");
+                    } else if (player.left == 3) {
+                        player.left = 0;
+
+                        $("#character-" + name).finish().animate({
+                            left: "-=50"
+                        });
+                        $("#character-" + name).css("background-position", "-32px -32px");
+                    }
+
+                    break;
+                case "up":
+                    player.up++;
+
+                    if (player.up == 1) {
+                        $("#character-" + name).finish().animate({
+                            top: "-=50"
+                        });
+                        $("#character-" + name).css("background-position", "0px -96px");
+                    } else if (player.up == 2) {
+                        $("#character-" + name).finish().animate({
+                            top: "-=50"
+                        });
+                        $("#character-" + name).css("background-position", "-64px -96px");
+                    } else if (player.up == 3) {
+                        player.up = 0;
+
+                        $("#character-" + name).finish().animate({
+                            top: "-=50"
+                        });
+                        $("#character-" + name).css("background-position", "-32px -96px");
+                    }
+
+                    break;
+                case "right":
+                    player.right++;
+
+                    if (player.right == 1) {
+                        $("#character-" + name).finish().animate({
+                            left: "+=50"
+                        });
+                        $("#character-" + name).css("background-position", "-64px -64px");
+                    } else if (player.right == 2) {
+                        $("#character-" + name).finish().animate({
+                            left: "+=50"
+                        });
+                        $("#character-" + name).css("background-position", "-0px -64px");
+                    } else if (player.right == 3) {
+                        player.right = 0;
+
+                        $("#character-" + name).finish().animate({
+                            left: "+=50"
+                        });
+                        $("#character-" + name).css("background-position", "-32px -64px");
+                    }
+
+                    break;
+                case "bottom":
+                    player.bottom++;
+
+                    if (player.bottom == 1) {
+                        $("#character-" + name).finish().animate({
+                            top: "+=50"
+                        });
+                        $("#character-" + name).css("background-position", "0px 0px");
+                    } else if (player.bottom == 2) {
+                        $("#character-" + name).finish().animate({
+                            top: "+=50"
+                        });
+                        $("#character-" + name).css("background-position", "-64px -0px");
+                    } else if (player.bottom == 3) {
+                        player.bottom = 0;
+
+                        $("#character-" + name).finish().animate({
+                            top: "+=50"
+                        });
+                        $("#character-" + name).css("background-position", "-32px 0px");
+                    }
+
+                    break;
+            }
+
+        }
+
+        function sayToAll(name, message) {
+            // Select the player
+            $("#character-" + name).append("<div class='speech-bubble'><div class='arrow bottom right'></div>" + message + "</div>");
+        }
+
+        var left = 0;
+        var up = 0;
+        var right = 0;
+        var bottom = 0;
+
+        $(document).keydown(function (e) {
+            switch (e.which) {
+                case 37:    //left arrow key
+                    left++;
+
+                    if (left == 1) {
+                        $("#character").finish().animate({
+                            left: "-=50"
+                        });
+                        $("#character").css("background-position", "0px -32px");
+                    } else if (left == 2) {
+                        $("#character").finish().animate({
+                            left: "-=50"
+                        });
+                        $("#character").css("background-position", "-64px -32px");
+                    } else if (left == 3) {
+                        left = 0;
+
+                        $("#character").finish().animate({
+                            left: "-=50"
+                        });
+                        $("#character").css("background-position", "-32px -32px");
+                    }
+
+                    var myPos = $("#character").offset();
+                    game.server.updatePos($("#name").val(), "left", myPos.left - 50, myPos.top);
+                    break;
+                case 38:    //up arrow key
+                    up++;
+
+                    if (up == 1) {
+                        $("#character").finish().animate({
+                            top: "-=50"
+                        });
+                        $("#character").css("background-position", "0px -96px");
+                    } else if (up == 2) {
+                        $("#character").finish().animate({
+                            top: "-=50"
+                        });
+                        $("#character").css("background-position", "-64px -96px");
+                    } else if (up == 3) {
+                        up = 0;
+
+                        $("#character").finish().animate({
+                            top: "-=50"
+                        });
+                        $("#character").css("background-position", "-32px -96px");
+                    }
+
+                    var myPos = $("#character").offset();
+                    game.server.updatePos($("#name").val(), "up", myPos.left, myPos.top - 50);
+
+                    break;
+                case 39:    //right arrow key
+                    right++;
+
+                    if (right == 1) {
+                        $("#character").finish().animate({
+                            left: "+=50"
+                        });
+                        $("#character").css("background-position", "-64px -64px");
+                    } else if (right == 2) {
+                        $("#character").finish().animate({
+                            left: "+=50"
+                        });
+                        $("#character").css("background-position", "-0px -64px");
+                    } else if (right == 3) {
+                        right = 0;
+
+                        $("#character").finish().animate({
+                            left: "+=50"
+                        });
+                        $("#character").css("background-position", "-32px -64px");
+                    }
+
+                    var myPos = $("#character").offset();
+                    game.server.updatePos($("#name").val(), "right", myPos.left + 50, myPos.top);
+
+                    break;
+                case 40:    //bottom arrow key
+                    bottom++;
+
+                    if (bottom == 1) {
+                        $("#character").finish().animate({
+                            top: "+=50"
+                        });
+                        $("#character").css("background-position", "0px 0px");
+                    } else if (bottom == 2) {
+                        $("#character").finish().animate({
+                            top: "+=50"
+                        });
+                        $("#character").css("background-position", "-64px -0px");
+                    } else if (bottom == 3) {
+                        bottom = 0;
+
+                        $("#character").finish().animate({
+                            top: "+=50"
+                        });
+                        $("#character").css("background-position", "-32px 0px");
+                    }
+
+                    var myPos = $("#character").offset();
+                    game.server.updatePos($("#name").val(), "bottom", myPos.left, myPos.top + 50);
+
+                    break;
+            }
+        });
+
+    </script>
+</head>
+<body>
+    <input type="text" id="message" />
+    <input type="button" id="sendmessage" value="Send" />
+    <div id="character"></div>
+    <input type="hidden" id="name" />
+</body>
+</html>                                		
